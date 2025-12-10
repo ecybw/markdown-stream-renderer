@@ -1,0 +1,141 @@
+/* 全局样式重置：统一盒模型、清除默认边距、设置基础字体/行高/配色 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 页面基础样式：设置背景色、文本色、行高，保证整体阅读体验 */
+body {
+  background-color: #f5f5f7;
+  color: #1d1d1f;
+  line-height: 1.6;
+}
+
+/* 游乐场容器：限制最大宽度、居中展示、设置内边距 */
+.playground-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 游乐场头部：弹性布局（两端对齐）、底部边框分隔、设置间距 */
+.playground-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* 控制按钮组：弹性布局、设置子元素间距、垂直居中 */
+.playground-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 通用按钮样式：基础内边距、圆角、鼠标样式、过渡效果 */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+/* 模拟流式输出按钮：主色调（蓝色）、白色文字 */
+.simulate-btn {
+  background-color: #0071e3;
+  color: white;
+}
+
+/* 禁用状态的模拟按钮：灰色背景、禁用鼠标样式 */
+.simulate-btn:disabled {
+  background-color: #949494;
+  cursor: not-allowed;
+}
+
+/* 重置按钮：浅灰背景、浅边框，区分主按钮 */
+.reset-btn {
+  background-color: #f5f5f7;
+  border: 1px solid #e0e0e0;
+}
+
+/* 语法修复开关：弹性布局、设置间距、统一字体大小 */
+.syntax-fix-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* 流式配置面板：弹性布局、背景白+阴影、圆角、内边距和间距 */
+.streaming-config-panel {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 单个配置项：垂直弹性布局、最小宽度、子元素间距 */
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 200px;
+}
+
+/* 配置项标签：小号字体、浅灰色文字，区分配置值 */
+.config-item label {
+  font-size: 14px;
+  color: #6e6e73;
+}
+
+/* 配置项滑块：宽度100%，适配容器 */
+.config-item input[type="range"] {
+  width: 100%;
+}
+
+/* 游乐场内容区：弹性布局、固定高度（视口适配）、子元素间距 */
+.playground-content {
+  display: flex;
+  gap: 20px;
+  height: calc(100vh - 200px);
+}
+
+/* Markdown输入框：等分宽度、代码字体、无resize、阴影+圆角、聚焦无外框 */
+.markdown-input {
+  flex: 1;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: white;
+  font-family: 'Menlo', 'Monaco', monospace;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Markdown预览容器：等分宽度、白色背景+阴影、圆角、垂直滚动、内边距 */
+.markdown-preview-container {
+  flex: 1;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: white;
+  overflow-y: auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 应用根容器：最小视口高度、基础内边距 */
+.app-container {
+  min-height: 100vh;
+  padding: 20px;
+}

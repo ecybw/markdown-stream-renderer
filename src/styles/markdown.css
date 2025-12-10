@@ -1,0 +1,374 @@
+/* Markdown预览区基础样式：设置基础字号、行高，统一标题/段落间距和样式 */
+.markdown-preview {
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+  margin: 1.5em 0 0.8em;
+  font-weight: 600;
+}
+
+.markdown-preview h1 {
+  font-size: 2em;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.5em;
+}
+
+.markdown-preview h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 0.3em;
+}
+
+.markdown-preview p {
+  margin: 1em 0;
+}
+
+/* 列表样式：设置列表间距、内边距，列表项上下间距 */
+.markdown-preview ul,
+.markdown-preview ol {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+.markdown-preview li {
+  margin: 0.5em 0;
+}
+
+/* 任务列表样式：弹性布局对齐复选框与文本，自定义复选框颜色 */
+.markdown-preview .task-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.markdown-preview .task-list-item input[type="checkbox"] {
+  margin-top: 0.2em;
+  accent-color: #0071e3;
+}
+
+/* 表格样式：边框合并、全宽展示，表头背景色区分，单元格内边距/边框统一 */
+.markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  padding: 0.8em;
+  border: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+.markdown-preview th {
+  background-color: #f5f5f7;
+  font-weight: 600;
+}
+
+/* 代码样式：代码块灰色背景+横向滚动，行内代码小字号+圆角，统一等宽字体 */
+.markdown-preview pre {
+  background-color: #f5f5f7;
+  padding: 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.markdown-preview code {
+  font-family: 'Menlo', 'Monaco', monospace;
+  font-size: 0.9em;
+  background-color: #f5f5f7;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+}
+
+.markdown-preview pre code {
+  padding: 0;
+}
+
+/* 链接和图片样式：链接蓝色无下划线（hover加下划线），图片自适应宽度+圆角 */
+.markdown-preview a {
+  color: #0071e3;
+  text-decoration: none;
+}
+
+.markdown-preview a:hover {
+  text-decoration: underline;
+}
+
+.markdown-preview img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 1em 0;
+}
+
+/* 引用样式：左侧边框标识，浅灰背景，内边距和间距控制 */
+.markdown-preview blockquote {
+  border-left: 4px solid #e0e0e0;
+  padding: 0.5em 1em;
+  margin: 1em 0;
+  background-color: #f9f9f9;
+}
+
+/* 脚注样式：上标显示引用标记，脚注内容小号浅灰色 */
+.markdown-preview .footnote-ref {
+  vertical-align: super;
+  font-size: 0.8em;
+}
+
+.markdown-preview .footnote-definition {
+  font-size: 0.9em;
+  color: #6e6e73;
+}
+
+/* 隐藏文本容器样式：行内块布局，相对定位，hover交互基础样式 */
+.hidden-text-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+/* 隐藏文本遮罩层：绝对定位覆盖容器，深灰背景，hover过渡效果 */
+.hidden-text-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #333333;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+/* 隐藏文本内容层：默认隐藏，hover显示，白色文本对比背景 */
+.hidden-text-content {
+  position: relative;
+  z-index: 2;
+  visibility: hidden;
+  color: #ffffff;
+}
+
+/* 隐藏文本hover交互：遮罩透明缩放，内容显示 */
+.hidden-text-container:hover .hidden-text-mask {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.hidden-text-container:hover .hidden-text-content {
+  visibility: visible;
+}
+
+/* 隐藏文本多行适配：保留换行空格，长文本自动换行，遮罩全高覆盖 */
+.hidden-text-container {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.hidden-text-mask {
+  height: 100%;
+}
+
+/* 隐藏文本最终样式：高优先级保证样式生效，行内块适配宽度，hover显示文本 */
+body .markdown-preview .hidden-text {
+  position: relative;
+  display: inline-block !important;
+  background-color: #333333 !important;
+  color: transparent !important;
+  padding: 3px 6px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+  z-index: 1 !important;
+  transition: all 0.2s ease !important;
+}
+
+body .markdown-preview .hidden-text:hover {
+  background-color: #444444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* 隐藏文本多行高度修复：伪元素保证背景全高覆盖 */
+body .markdown-preview .hidden-text::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: inherit;
+  border-radius: inherit;
+  z-index: -1 !important;
+}
+
+/* 徽章基础样式：行内块布局，统一内边距、圆角、字号和间距 */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 4px;
+  color: #fff;
+}
+
+/* 不同类型徽章配色：成功/警告/危险/默认 */
+.badge-success {
+  background-color: #4ade80;
+}
+.badge-warning {
+  background-color: #facc15;
+  color: #3730a3;
+}
+.badge-danger {
+  background-color: #ef4444;
+}
+.badge-default {
+  background-color: #64748b;
+}
+
+/* 提示框基础样式：圆角、内边距、左侧边框标识，浅灰背景 */
+.callout {
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  border-left: 4px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+/* 不同类型提示框配色：默认/危险/成功/警告 */
+.callout-default {
+  border-left-color: #64748b;
+  background-color: #f8fafc;
+}
+.callout-danger {
+  border-left-color: #ef4444;
+  background-color: #fef2f2;
+}
+.callout-success {
+  border-left-color: #4ade80;
+  background-color: #f0fdf4;
+}
+.callout-warning {
+  border-left-color: #facc15;
+  background-color: #fffbeb;
+}
+
+/* 提示框标题样式：加粗，间距控制，不同类型对应文字色 */
+.callout-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1e293b;
+}
+.callout-danger .callout-title {
+  color: #b91c1c;
+}
+.callout-success .callout-title {
+  color: #166534;
+}
+.callout-warning .callout-title {
+  color: #854d0e;
+}
+
+/* 提示框内容样式：行高控制，列表间距适配，不同类型文字色 */
+.callout-content {
+  line-height: 1.6;
+  color: #475569;
+}
+.callout-content ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+.callout-content li {
+  margin: 4px 0;
+}
+.callout-danger .callout-content {
+  color: #991b1b;
+}
+.callout-success .callout-content {
+  color: #14532d;
+}
+.callout-warning .callout-content {
+  color: #78350f;
+}
+
+/* 徽章强制样式：高优先级保证行内展示，对齐文本基线 */
+.badge {
+  display: inline-block !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  margin: 0 4px !important;
+  color: #fff !important;
+  vertical-align: middle !important;
+}
+
+.badge-success { background-color: #4ade80 !important; }
+.badge-warning { background-color: #facc15 !important; color: #3730a3 !important; }
+.badge-danger { background-color: #ef4444 !important; }
+.badge-default { background-color: #64748b !important; }
+
+/* 提示框强制样式：高优先级保证展示样式不被覆盖 */
+.callout {
+  display: block !important;
+  margin: 16px 0 !important;
+  padding: 16px !important;
+  border-radius: 8px !important;
+  border-left: 4px solid #e2e8f0 !important;
+  background-color: #f8fafc !important;
+}
+
+.callout-danger {
+  border-left-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+.callout-danger .callout-title { color: #b91c1c !important; }
+
+.callout-success {
+  border-left-color: #4ade80 !important;
+  background-color: #f0fdf4 !important;
+}
+.callout-success .callout-title { color: #166534 !important; }
+
+/* 按钮基础样式：内边距、无边框、圆角，统一字号和鼠标样式 */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0 8px;
+  font-size: 14px;
+}
+
+/* 不同功能按钮配色：加载测试/模拟流式/重置 */
+.load-test-btn {
+  background-color: #4ade80;
+  color: #fff;
+}
+.simulate-btn {
+  background-color: #3b82f6;
+  color: #fff;
+}
+.reset-btn {
+  background-color: #ef4444;
+  color: #fff;
+}
+
+/* 按钮禁用状态：浅灰背景，禁用鼠标样式，降低透明度 */
+.btn:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}

@@ -1,0 +1,14 @@
+/* 引入KaTeX基础样式 */
+@import 'katex/dist/katex.min.css';
+
+/* 块级公式居中 */
+.markdown-preview .katex-display {
+  display: flex;
+  justify-content: center;
+  margin: 1.5em 0;
+}
+
+/* 行内公式对齐 */
+.markdown-preview .katex {
+  vertical-align: middle;
+}
