@@ -1,74 +1,204 @@
 /**
- * 修复Markdown公式语法问题：兼容跨行块级公式，区分闭合状态补全缺失符号，不改动正确语法
- * 核心优化：
- * 1. 支持跨行块级公式匹配，保留换行符保证LaTeX语法完整
- * 2. 区分块级公式已闭合/半闭合/未闭合状态，仅修复异常场景
- * 3. 行内公式仅补全未闭合符号，不改动正确语法
+ * 修复Markdown未闭合内容：公式/表格/链接/图片/代码块等
  */
 export const fixMarkdownSyntax = (text: string): string => {
   let fixedText: string = text;
+
+  // 1. 公式修复：逐行处理，仅修改首尾符号（块级/行内/无包裹）
+  const lines = fixedText.split('\n');
+  const fixedLines: string[] = [];
+
+  lines.forEach((originalLine) => {
+    let line = originalLine;
+    if (line.trim() === '') {
+      fixedLines.push(line);
+      return;
+    }
+
+    // 1.1 块级公式：清理行尾多余$，补全结尾$$
+    if (line.startsWith('未闭合块级公式：')) {
+      const prefix = '未闭合块级公式：';
+      const content = line.slice(prefix.length);
+      const cleanContent = content.replace(/\$+$/, '');
+      const finalContent = cleanContent + '$$';
+      line = prefix + finalContent;
+    }
+
+    // 1.2 行内公式：清理行尾多余$，补全结尾$
+    if (line.startsWith('未闭合行内公式：')) {
+      const prefix = '未闭合行内公式：';
+      const content = line.slice(prefix.length);
+      const cleanContent = content.replace(/\$+$/, '');
+      const finalContent = cleanContent + (cleanContent.startsWith('$') ? '$' : '');
+      line = prefix + finalContent;
+    }
+
+    // 1.3 无包裹公式：添加成对$，保留原始内容
+    if (line.startsWith('无包裹公式：')) {
+      const prefix = '无包裹公式：';
+      const content = line.slice(prefix.length).trim();
+      line = prefix + (content.startsWith('$') ? content : `$${content}$`);
+    }
+
+    fixedLines.push(line);
+  });
+  fixedText = fixedLines.join('\n');
+
+  // 2. 其他内容修复：链接/图片/表格/代码块
   const placeholderMap: Map<string, string> = new Map<string, string>();
   let seq: number = 0;
+  const genPh = (): string => `__MD_FIX_${seq++}__`; // 生成唯一占位符避免冲突
 
-  // 生成唯一占位符，用于临时替换待修复的块级公式
-  const genPh = (): string => `__MD_FIX_${seq++}__`;
+  // 2.1 链接修复：补全未闭合链接，清理URL末尾多余符号
+  const fixUnclosedLinks = (str: string): string => {
+    let result = str;
+    const linkRegex = /\[([^\]]+)\]\(([^)]+?)(?=、|，|！|。|\s|\[|$|\）)(?<!\))/g;
+    result = result.replace(linkRegex, (_, linkText: string, linkUrl: string) => {
+      const cleanUrl = linkUrl.trim().replace(/\)+$/, '').replace(/\）$/, '');
+      return `[${linkText}](${cleanUrl})`;
+    });
+    return result;
+  };
+  fixedText = fixUnclosedLinks(fixedText);
 
-  // 步骤1：处理块级公式 - 匹配跨行内容，区分闭合状态补全符号
-  // 正则匹配$$开头的块级公式，支持跨行内容，匹配结尾的$$/$（可选）
-  const blockMathRegex: RegExp = /\$\$([\s\S]*?)(\$\$|\$)?(?=\（|$|\n\s*[^\\\$])/g;
-  fixedText = fixedText.replace(blockMathRegex, (fullMatch: string, formula: string, endSymbols: string | undefined) => {
-    // 清理公式首尾空格（保留内部换行），补全缺失的闭合大括号
-    const cleanFormula: string = formula
-      .trim()
-      .replace(/(?<=[0-9a-zA-Z])$/, () => {
-        const openBrace: number = (formula.match(/{/g) || []).length;
-        const closeBrace: number = (formula.match(/}/g) || []).length;
-        return openBrace > closeBrace ? '}' : '';
+  // 2.2 图片修复：补全未闭合图片链接，清理URL末尾多余符号
+  const fixUnclosedImages = (str: string): string => {
+    let result = str;
+    const imageRegex = /!\[([\u4e00-\u9fa5^\]]*)\]\(([^)]+?)(?=、|，|！|。|\s|\[|$|\）)(?<!\))/g;
+    result = result.replace(imageRegex, (_, altText: string, imgUrl: string) => {
+      const cleanUrl = imgUrl.trim().replace(/\)+$/, '').replace(/\）$/, '');
+      return `![${altText}](${cleanUrl})`;
+    });
+    return result;
+  };
+  fixedText = fixUnclosedImages(fixedText);
+
+  // 2.3 表格修复：兼容对齐分隔线，补全竖线，无多余行
+  const fixTableSyntax = (str: string): string => {
+    let result = str;
+    const lines = result.split('\n');
+    let inTable = false;
+    let tableLines: string[] = [];
+    const finalLines: string[] = [];
+
+    // 辅助函数：识别带对齐符的分隔线（:---:、---:、---等）
+    const isSeparatorLine = (line: string) => {
+      const cleanLine = line.replace(/\|/g, '').replace(/\s+/g, '');
+      return /^[-:]+$/.test(cleanLine) && cleanLine.includes('-');
+    };
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      // 识别表格行：非空且包含|
+      if (trimmedLine && trimmedLine.includes('|')) {
+        inTable = true;
+        let cleanLine = trimmedLine.replace(/\|+/g, '|'); // 合并重复竖线
+        cleanLine = cleanLine.startsWith('|') ? cleanLine : `|${cleanLine}`; // 补全首竖线
+        cleanLine = cleanLine.endsWith('|') ? cleanLine : `${cleanLine}|`; // 补全尾竖线
+        tableLines.push(cleanLine);
+      } else {
+        if (inTable) { // 退出表格，处理收集的表格行
+          if (tableLines.length > 0) {
+            // 分离表头、原始分隔线、内容行
+            let headerLine = '';
+            let originalSeparatorLine = '';
+            const contentLines: string[] = [];
+
+            tableLines.forEach(row => {
+              if (!headerLine && !isSeparatorLine(row)) headerLine = row;
+              else if (isSeparatorLine(row) && !originalSeparatorLine) originalSeparatorLine = row;
+              else if (!isSeparatorLine(row)) contentLines.push(row);
+            });
+
+            // 组装表格行：优先保留原始分隔线，无则生成默认
+            const processedTable: string[] = [];
+            if (headerLine) processedTable.push(headerLine);
+            if (!originalSeparatorLine && headerLine) {
+              const headerCols = headerLine.split('|').filter(col => col.trim() !== '').length;
+              originalSeparatorLine = `|${Array(headerCols).fill('---').join('|')}|`;
+              processedTable.push(originalSeparatorLine);
+            } else if (originalSeparatorLine) processedTable.push(originalSeparatorLine);
+            if (contentLines.length > 0) processedTable.push(...contentLines);
+
+            finalLines.push(...processedTable);
+          }
+          tableLines = [];
+          inTable = false;
+        }
+        finalLines.push(line);
+      }
+    }
+
+    // 处理文件末尾未结束的表格
+    if (inTable && tableLines.length > 0) {
+      let headerLine = '';
+      let originalSeparatorLine = '';
+      const contentLines: string[] = [];
+
+      tableLines.forEach(row => {
+        if (!headerLine && !isSeparatorLine(row)) headerLine = row;
+        else if (isSeparatorLine(row) && !originalSeparatorLine) originalSeparatorLine = row;
+        else if (!isSeparatorLine(row)) contentLines.push(row);
       });
 
-    // 根据结尾符号判断闭合状态，分情况处理
-    if (endSymbols === '$$') {
-      // 已完全闭合：直接返回原内容，不修改
-      return fullMatch;
-    } else if (endSymbols === '$') {
-      // 半闭合（末尾单个$）：替换为占位符，后续还原为完整闭合的块级公式
-      const ph: string = genPh();
-      placeholderMap.set(ph, `$$${cleanFormula}$$`);
-      return ph;
-    } else {
-      // 完全未闭合：替换为占位符，后续还原为完整闭合的块级公式
-      const ph: string = genPh();
-      placeholderMap.set(ph, `$$${cleanFormula}$$`);
-      return ph;
+      const processedTable: string[] = [];
+      if (headerLine) processedTable.push(headerLine);
+      if (!originalSeparatorLine && headerLine) {
+        const headerCols = headerLine.split('|').filter(col => col.trim() !== '').length;
+        originalSeparatorLine = `|${Array(headerCols).fill('---').join('|')}|`;
+        processedTable.push(originalSeparatorLine);
+      } else if (originalSeparatorLine) processedTable.push(originalSeparatorLine);
+      if (contentLines.length > 0) processedTable.push(...contentLines);
+
+      finalLines.push(...processedTable);
     }
-  });
 
-  // 步骤2：处理行内公式 - 仅补全未闭合的行内公式结束符，兼容跨行场景
-  const inlineMathRegex: RegExp = /(?<!\$)(?<!__MD_FIX_\d+__)\\?\$(?!\$)([\\a-zA-Z0-9_{}^+\-*/()=\s]+)(?=\（|$|\s)/g;
-  const inlineMatches: RegExpMatchArray[] = [...fixedText.matchAll(inlineMathRegex)];
-  
-  // 统计有效未闭合的行内公式数量
-  const validInlineCount: number = inlineMatches.filter(match => {
-    const matchEndPos: number = (match.index as number) + match[0].length;
-    return !fixedText.slice(matchEndPos).startsWith('$');
-  }).length;
+    return finalLines.join('\n');
+  };
+  fixedText = fixTableSyntax(fixedText);
 
-  // 若有效行内公式数量为奇数，为最后一个公式补全结束符$
-  if (inlineMatches.length > 0 && validInlineCount % 2 !== 0) {
-    const lastMatch: RegExpMatchArray = inlineMatches[inlineMatches.length - 1];
-    const fullMatch: string = lastMatch[0] as string;
-    const matchIndex: number = lastMatch.index as number;
-    const matchEndPos: number = matchIndex + fullMatch.length;
+  // 2.4 代码块修复：补全未闭合代码块，规范语言标识
+  const fixCodeBlocks = (str: string): string => {
+    let result = str;
+    result = result.replace(/```([a-zA-Z0-9]*)\n?([\s\S]*?)(?=```|$)/g, (fullMatch, lang, code) => {
+      if (fullMatch.endsWith('```')) return fullMatch;
+      const cleanLang = lang.trim().replace(/(\w+)\s+\1/g, '$1'); // 去重语言标识
+      const ph = genPh();
+      placeholderMap.set(ph, `\`\`\`${cleanLang}\n${code.trimEnd()}\n\`\`\``);
+      return ph;
+    });
+    return result;
+  };
+  fixedText = fixCodeBlocks(fixedText);
 
-    if (!fixedText.slice(matchEndPos).startsWith('$')) {
-      fixedText = `${fixedText.slice(0, matchEndPos)}$${fixedText.slice(matchEndPos)}`;
+  // 2.5 行内代码修复：补全未闭合的反引号
+  const fixUnclosedSymbol = (str: string, openChar: string, closeChar: string): string => {
+    let result = str;
+    let openCount = 0;
+    let inEscape = false;
+
+    // 统计未闭合符号数量
+    for (let i = 0; i < result.length; i++) {
+      const char = result[i];
+      if (char === '\\' && !inEscape) { inEscape = true; continue; }
+      if (char === openChar && !inEscape) openCount++;
+      if (char === closeChar && !inEscape) openCount--;
+      inEscape = false;
     }
-  }
+    // 补全未闭合符号
+    if (openCount > 0) result += closeChar.repeat(openCount);
+    return result;
+  };
+  fixedText = fixUnclosedSymbol(fixedText, '`', '`');
 
-  // 步骤3：还原占位符为补全后的块级公式
-  placeholderMap.forEach((fixedBlockMath: string, ph: string) => {
-    fixedText = fixedText.replace(ph, fixedBlockMath);
+  // 3. 最终清理：替换占位符，清理重复符号
+  placeholderMap.forEach((content, ph) => {
+    fixedText = fixedText.replace(new RegExp(ph, 'g'), content);
   });
+  fixedText = fixedText
+    .replace(/(\)){2,}/g, ')') // 清理重复括号
+    .replace(/``````/g, '```') // 清理重复代码块符号
+    .trim();
 
   return fixedText;
 };
