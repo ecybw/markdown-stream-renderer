@@ -5,34 +5,44 @@ export const fixMarkdownSyntax = (text: string): string => {
   const COMMON_BOUNDARY_REG = /(、|，|！|。|？|；|：|\s{2,}|$|\n|【|】|《|》)/;
 
 
-  // 1. 公式修复：边界识别+符号补全（保留优化后逻辑）
+  // 1. 公式修复：边界识别+符号补全
   const fixUnclosedFormulas = (content: string): string => {
-    let lines = content.split('\n');
-    const fixedLines: string[] = [];
+  let lines = content.split('\n');
+  const fixedLines: string[] = [];
 
-    lines.forEach((originalLine) => {
-      let line = originalLine;
-      if (line.trim() === '') {
-        fixedLines.push(line);
-        return;
-      }
-
-      // 通用公式修复
-      const formulaMatches = line.match(/(?<!\\)(\$\$?)([^\$]+?)(?=、|，|！|。|？|；|：|\s{2,}|$|\n)/g) || [];
-      formulaMatches.forEach((match) => {
-        const isBlock = match.startsWith('$$');
-        const symbol = isBlock ? '$$' : '$';
-        const formulaContent = match.replace(/^\$\$?/, '');
-        const cleanContent = formulaContent.trim().replace(COMMON_BOUNDARY_REG, '');
-        const fixedFormula = `${symbol}${cleanContent}${symbol}`;
-        line = line.replace(match, fixedFormula);
-      });
-
+  lines.forEach((originalLine) => {
+    let line = originalLine;
+    if (line.trim() === '') {
       fixedLines.push(line);
+      return;
+    }
+
+    const formulaRegex = /(?<!\\)(\$\$?)([a-zA-Z0-9\+\-\×÷\=\^\_≥≤≠\(\)\[\]\{\}\/\\\.\s]+?)\$*(?=([，。！？；：、]|\s{2,}|$|\n))/g;
+    const formulaMatches = line.match(formulaRegex) || [];
+
+    formulaMatches.forEach((match) => {
+      // 精准提取开头的 $ 符号并统计数量
+      const startSymbols = match.match(/^\$+/ )?.[0] ?? '$'; 
+      const symbolCount = startSymbols.length; // 1 或 2
+      
+      // 清理公式内容中所有的 $（因为内容区不应有 $）
+      const formulaContent = match.replace(/^\$+/, '').replace(/\$+/g, '').trim();
+
+      // 仅当内容有效时补全
+      if (formulaContent && /^[a-zA-Z0-9\+\-\×÷\=\^\_≥≤≠\(\)\[\]\{\}\/\\\.\s]+$/.test(formulaContent)) {
+        // 按开头数量生成闭合符号
+        const closeSymbols = '$'.repeat(symbolCount);
+        const fixedFormula = `${startSymbols}${formulaContent}${closeSymbols}`;
+        line = line.replace(match, fixedFormula);
+      }
     });
 
-    return fixedLines.join('\n');
-  };
+    line = line.replace(/([，。！？；：、])\$\$?([a-zA-Z0-9_]+?)\$\$?/g, '$1$2');
+    fixedLines.push(line);
+  });
+
+  return fixedLines.join('\n');
+};
   fixedText = fixUnclosedFormulas(fixedText);
 
   // 2. 链接修复：先定URL边界（中文标点/行尾）→ 补全)
@@ -70,7 +80,6 @@ export const fixMarkdownSyntax = (text: string): string => {
     let result = str;
     const lines = result.split('\n');
     let inUnclosedCodeBlock = false; // 标记未闭合代码块状态
-    let codeBlockLang = ''; // 代码块语言标识
     let codeBlockContent: string[] = [];
     const fixedLines: string[] = [];
 
@@ -80,7 +89,6 @@ export const fixMarkdownSyntax = (text: string): string => {
       if (trimmedLine.startsWith('```') && !inUnclosedCodeBlock) {
         inUnclosedCodeBlock = true;
         // 提取语言标识（按边界截断，避免多余字符）
-        codeBlockLang = trimmedLine.replace('```', '').split(COMMON_BOUNDARY_REG)[0].trim();
         codeBlockContent = [];
         fixedLines.push(line);
         return;
@@ -90,7 +98,6 @@ export const fixMarkdownSyntax = (text: string): string => {
       if (trimmedLine === '```' && inUnclosedCodeBlock) {
         inUnclosedCodeBlock = false;
         fixedLines.push(line);
-        codeBlockLang = '';
         codeBlockContent = [];
         return;
       }
